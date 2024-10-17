@@ -3,6 +3,8 @@ import datetime
 import re
 from csv_generator import process_text_file
 from letter_statistics import calculate_letter_statistics
+import json
+from abc import ABC, abstractmethod
 
 
 # Base class for all record types
@@ -130,44 +132,102 @@ class NewsFeedManager:
                 print("Invalid choice. Please select again.")
 
 
-# New class to process records from a file
-class FileProcessor:
-    def __init__(self, file_path=None):
-        self.file_path = file_path or "news_feed_input.txt"  # Default folder or provided file path
+# Abstract base class for file processors
+class BaseFileProcessor(ABC):
+    def __init__(self, file_path: str):
+        self.file_path = file_path
 
+    @abstractmethod
     def process_file(self):
+        pass
+
+    def read_file(self):
+        """Helper method for reading file content"""
         try:
             with open(self.file_path, "r") as file:
-                for line in file:
-                    # Assuming each line contains: <type>: <text>; [city|author|expiration_date]
-                    # Normalize the record type to lowercase
-                    record_type, details = line.strip().split(": ", 1)
-                    record_type = record_type.lower()  # Convert to lowercase for case-insensitive matching
-
-                    if record_type == "news":
-                        text, city = details.split("; ")
-                        news = News(text, city)
-                        news.save()
-                    elif record_type == "privatead":
-                        text, expiration_date_str = details.split("; ")
-                        expiration_date = datetime.datetime.strptime(expiration_date_str, "%Y-%m-%d")
-                        private_ad = PrivateAd(text, expiration_date)
-                        private_ad.save()
-                    elif record_type == "quoteoftheday":
-                        quote, author = details.split("; ")
-                        quote_of_the_day = QuoteOfTheDay(quote, author)
-                        quote_of_the_day.save()
-                    else:
-                        print(f"Unknown record type: {record_type}")
-
-            # If everything is processed successfully, remove the file
-            os.remove(self.file_path)
-            print(f"File {self.file_path} processed and removed successfully.")
-
+                return file.read()
         except FileNotFoundError:
             print(f"File {self.file_path} not found.")
         except Exception as e:
-            print(f"An error occurred while processing the file: {e}")
+            print(f"An error occurred while reading the file: {e}")
+            return None
+
+
+# Specific class to process text (.txt) files
+class TextFileProcessor(BaseFileProcessor):
+    """Class responsible for processing .txt files."""
+
+    def process_file(self):
+        file_content = self.read_file()
+        if file_content is None:
+            return
+
+        for line in file_content.strip().split("\n"):
+            record_type, details = line.split(": ", 1)
+            record_type = record_type.lower()
+
+            if record_type == "news":
+                text, city = details.split("; ")
+                News(text, city).save()
+            elif record_type == "privatead":
+                text, expiration_date_str = details.split("; ")
+                expiration_date = datetime.datetime.strptime(expiration_date_str, "%Y-%m-%d")
+                PrivateAd(text, expiration_date).save()
+            elif record_type == "quoteoftheday":
+                quote, author = details.split("; ")
+                QuoteOfTheDay(quote, author).save()
+            else:
+                print(f"Unknown record type: {record_type}")
+        os.remove(self.file_path)
+        print(f"File {self.file_path} processed and removed.")
+
+
+# Specific class to process JSON (.json) files
+class JsonFileProcessor(BaseFileProcessor):
+    def process_file(self):
+        file_content = self.read_file()
+        if file_content is None:
+            return
+
+        try:
+            data = json.loads(file_content)
+            for record in data["records"]:
+                record_type = record["type"].lower()
+
+                if record_type == "news":
+                    News(record["text"], record["city"]).save()
+                elif record_type == "privatead":
+                    expiration_date = datetime.datetime.strptime(record["expiration_date"], "%Y-%m-%d")
+                    PrivateAd(record["text"], expiration_date).save()
+                elif record_type == "quoteoftheday":
+                    QuoteOfTheDay(record["quote"], record["author"]).save()
+                else:
+                    print(f"Unknown record type: {record_type}")
+            os.remove(self.file_path)
+            print(f"JSON file {self.file_path} processed and removed.")
+        except json.JSONDecodeError:
+            print(f"Failed to decode JSON in {self.file_path}.")
+
+
+# FileProcessor class for delegating to specific processors
+class FileProcessor:
+    """Class responsible for processing files based on their format."""
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path or "news_feed_input.json"
+
+    def process_file(self):
+        _, file_extension = os.path.splitext(self.file_path)
+
+        if file_extension.lower() == ".txt":
+            processor = TextFileProcessor(self.file_path)
+        elif file_extension.lower() == ".json":
+            processor = JsonFileProcessor(self.file_path)
+        else:
+            print(f"Unsupported file extension: {file_extension}")
+            return
+
+        processor.process_file()
 
 
 # Main code to start the application
