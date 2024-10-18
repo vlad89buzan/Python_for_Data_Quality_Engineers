@@ -5,6 +5,7 @@ from csv_generator import process_text_file
 from letter_statistics import calculate_letter_statistics
 import json
 from abc import ABC, abstractmethod
+import xml.etree.ElementTree as ET
 
 
 # Base class for all record types
@@ -209,12 +210,50 @@ class JsonFileProcessor(BaseFileProcessor):
             print(f"Failed to decode JSON in {self.file_path}.")
 
 
+# Specific class to process XML (.xml) files
+class XmlFileProcessor(BaseFileProcessor):
+    """Class responsible for processing .xml files."""
+
+    def process_file(self):
+        file_content = self.read_file()
+        if file_content is None:
+            return
+
+        try:
+            root = ET.fromstring(file_content)
+
+            # Process news section
+            for news in root.findall("news"):
+                title = news.find("title").text
+                location = news.find("location").text
+                News(title, location).save()
+
+            # Process private ad section
+            for ad in root.findall("privateAd"):
+                title = ad.find("title").text
+                expiry_date_str = ad.find("expiryDate").text
+                expiry_date = datetime.datetime.strptime(expiry_date_str, "%Y-%m-%d")
+                PrivateAd(title, expiry_date).save()
+
+            # Process quote of the day section
+            for quote in root.findall("quoteOfTheDay"):
+                quote_text = quote.find("quote").text
+                author = quote.find("author").text
+                QuoteOfTheDay(quote_text, author).save()
+
+            os.remove(self.file_path)
+            print(f"XML file {self.file_path} processed and removed.")
+
+        except ET.ParseError:
+            print(f"Failed to parse XML in {self.file_path}.")
+
+
 # FileProcessor class for delegating to specific processors
 class FileProcessor:
     """Class responsible for processing files based on their format."""
 
     def __init__(self, file_path: str):
-        self.file_path = file_path or "news_feed_input.json"
+        self.file_path = file_path or "news_feed_input.xml"
 
     def process_file(self):
         _, file_extension = os.path.splitext(self.file_path)
@@ -223,6 +262,8 @@ class FileProcessor:
             processor = TextFileProcessor(self.file_path)
         elif file_extension.lower() == ".json":
             processor = JsonFileProcessor(self.file_path)
+        elif file_extension.lower() == ".xml":
+            processor = XmlFileProcessor(self.file_path)
         else:
             print(f"Unsupported file extension: {file_extension}")
             return

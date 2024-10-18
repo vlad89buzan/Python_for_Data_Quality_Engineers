@@ -1,0 +1,14 @@
+<data>
+    <news>
+        <title>Latest updates on the Stock market</title>
+        <location>London</location>
+    </news>
+    <privateAd>
+        <title>Sale on all Summer items</title>
+        <expiryDate>2024-11-30</expiryDate>
+    </privateAd>
+    <quoteOfTheDay>
+        <quote>Life is what happens when you're busy making other plans</quote>
+        <author>John Lennon</author>
+    </quoteOfTheDay>
+</data>
