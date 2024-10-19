@@ -1,11 +1,15 @@
 import os
 import datetime
 import re
+import json
+import xml.etree.ElementTree as ET
+import pyodbc
+from abc import ABC, abstractmethod
+from pathlib import Path
 from csv_generator import process_text_file
 from letter_statistics import calculate_letter_statistics
-import json
-from abc import ABC, abstractmethod
-import xml.etree.ElementTree as ET
+
+db_fn = Path("news_feed.db")
 
 
 # Base class for all record types
@@ -22,18 +26,116 @@ class Record:
         print(f"{self.__class__.__name__} added successfully.")
 
 
-# Helper function to normalize text from a case-insensitive point of view
+# Helper function to normalize text
 def normalize_text(text):
-    text = text.lower().strip()  # Convert the whole text to lowercase and remove leading/trailing spaces
+    text = text.lower().strip()  # Convert to lowercase and strip spaces
     text = re.sub(r'\s+', ' ', text)  # Replace multiple spaces with a single space
-    return text.capitalize()  # Capitalize the first letter of the first word
+    return text.capitalize()  # Capitalize the first letter
 
 
-# News class (inherits from Record)
+# Database Manager class
+class DatabaseManager:
+    def __init__(self):
+        self.db_file = db_fn
+        self.connection_string = f'DRIVER={{SQLite3 ODBC Driver}};DATABASE={self.db_file}'
+        self.conn = pyodbc.connect(self.connection_string)
+        self.cursor = self.conn.cursor()
+        self.create_tables()
+
+    def create_tables(self):
+        try:
+            create_news_table = '''
+                CREATE TABLE IF NOT EXISTS news (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    text TEXT NOT NULL,
+                    city TEXT NOT NULL,
+                    date TEXT NOT NULL,
+                    UNIQUE(text, city, date)
+                );
+            '''
+            self.cursor.execute(create_news_table)
+
+            create_private_ads_table = '''
+                CREATE TABLE IF NOT EXISTS private_ads (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    text TEXT NOT NULL,
+                    expiration_date TEXT NOT NULL,
+                    days_left INTEGER NOT NULL,
+                    UNIQUE(text, expiration_date)
+                );
+            '''
+            self.cursor.execute(create_private_ads_table)
+
+            create_quotes_table = '''
+                CREATE TABLE IF NOT EXISTS quotes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    quote TEXT NOT NULL,
+                    author TEXT NOT NULL,
+                    UNIQUE(quote, author)
+                );
+            '''
+            self.cursor.execute(create_quotes_table)
+
+            self.conn.commit()
+        except Exception as e:
+            print(f"Error creating tables: {e}")
+
+    def save_record(self, table, data):
+        try:
+            # Check for existing record based on the table
+            if table == "news":
+                check_query = f"""
+                            SELECT COUNT(*) FROM {table}
+                            WHERE text = ? AND city = ?  
+                        """
+                self.cursor.execute(check_query, (data["text"], data["city"]))
+                exists = self.cursor.fetchone()[0]
+
+                if exists:
+                    print(f"Record already exists in {table}. Record not inserted.")
+                    return  # Exit the method if the record already exists
+
+            elif table == "private_ads":
+                check_query = f"""
+                            SELECT COUNT(*) FROM {table}
+                            WHERE text = ? AND expiration_date = ?
+                        """
+                self.cursor.execute(check_query, (data["text"], data["expiration_date"]))
+                exists = self.cursor.fetchone()[0]
+
+                if exists:
+                    print(f"Record already exists in {table}. Record not inserted.")
+                    return  # Exit the method if the record already exists
+
+            elif table == "quotes":
+                check_query = f"""
+                            SELECT COUNT(*) FROM {table}
+                            WHERE quote = ? AND author = ?
+                        """
+                self.cursor.execute(check_query, (data["quote"], data["author"]))
+                exists = self.cursor.fetchone()[0]
+
+                if exists:
+                    print(f"Record already exists in {table}. Record not inserted.")
+                    return  # Exit the method if the record already exists
+
+            placeholders = ', '.join(['?'] * len(data))
+            query = f"INSERT INTO {table} ({', '.join(data.keys())}) VALUES ({placeholders})"
+            self.cursor.execute(query, tuple(data.values()))
+            self.conn.commit()
+            print(f"Record inserted into {table}")
+        except pyodbc.IntegrityError:
+            print(f"Duplicate record found in {table}. Record not inserted.")
+
+    def close_connection(self):
+        self.conn.close()
+
+
+# News class
 class News(Record):
     def __init__(self, text, city):
-        super().__init__(normalize_text(text))  # Normalize the news text
-        self.city = city.title()  # Capitalize city name
+        super().__init__(normalize_text(text))
+        self.city = city.title()
         self.date = datetime.datetime.now().strftime("%d/%m/%Y %H.%M")
 
     def format_record(self):
@@ -41,11 +143,21 @@ class News(Record):
                 f"{self.text}\n"
                 f"{self.city}, {self.date}")
 
+    def save_to_db(self):
+        db_manager = DatabaseManager()
+        data = {
+            "text": self.text,
+            "city": self.city,
+            "date": self.date
+        }
+        db_manager.save_record("news", data)
+        db_manager.close_connection()
 
-# PrivateAd class (inherits from Record)
+
+# PrivateAd class
 class PrivateAd(Record):
     def __init__(self, text, expiration_date):
-        super().__init__(normalize_text(text))  # Normalize the ad text
+        super().__init__(normalize_text(text))
         self.expiration_date = expiration_date
         self.days_left = (self.expiration_date - datetime.datetime.now()).days
 
@@ -54,14 +166,22 @@ class PrivateAd(Record):
                 f"{self.text}\n"
                 f"Actual until: {self.expiration_date.strftime('%d/%m/%Y')}, {self.days_left} days left")
 
+    def save_to_db(self):
+        db_manager = DatabaseManager()
+        data = {
+            "text": self.text,
+            "expiration_date": self.expiration_date.strftime('%Y-%m-%d'),
+            "days_left": self.days_left
+        }
+        db_manager.save_record("private_ads", data)
+        db_manager.close_connection()
+
     @staticmethod
     def get_valid_expiration_date():
         while True:
             expiration_date_input = input("Enter expiration date (YYYY-MM-DD): ")
             try:
                 expiration_date = datetime.datetime.strptime(expiration_date_input, "%Y-%m-%d")
-
-                # Check if the date is in the past
                 if expiration_date < datetime.datetime.now():
                     print("The expiration date is in the past. Please enter a future date.")
                 else:
@@ -70,37 +190,49 @@ class PrivateAd(Record):
                 print("Incorrect date format. Please enter the date in the format YYYY-MM-DD (e.g., 2024-12-31).")
 
 
-# QuoteOfTheDay class (unique record example)
+# QuoteOfTheDay class
 class QuoteOfTheDay(Record):
     def __init__(self, quote, author):
-        super().__init__(normalize_text(quote))  # Normalize the quote text
-        self.author = author.title()  # Capitalize author name
+        super().__init__(normalize_text(quote))
+        self.author = author.title()
 
     def format_record(self):
         return (f"Quote of the day ------------\n"
                 f"\"{self.text}\"\n"
                 f"- {self.author}")
 
+    def save_to_db(self):
+        db_manager = DatabaseManager()
+        data = {
+            "quote": self.text,
+            "author": self.author
+        }
+        db_manager.save_record("quotes", data)
+        db_manager.close_connection()
 
-# Manager class to handle user input and manage records
+
+# Manager class for user input
 class NewsFeedManager:
     def add_news(self):
         text = input("Enter news text: ")
         city = input("Enter city: ")
         news = News(text, city)
         news.save()
+        news.save_to_db()
 
     def add_private_ad(self):
         text = input("Enter ad text: ")
         expiration_date = PrivateAd.get_valid_expiration_date()
         private_ad = PrivateAd(text, expiration_date)
         private_ad.save()
+        private_ad.save_to_db()
 
     def add_quote_of_the_day(self):
         quote = input("Enter the quote: ")
         author = input("Enter the author's name: ")
         quote_of_the_day = QuoteOfTheDay(quote, author)
         quote_of_the_day.save()
+        quote_of_the_day.save_to_db()
 
     def process_file_records(self):
         file_path = input("Enter the file path (or press Enter for default): ")
@@ -125,7 +257,7 @@ class NewsFeedManager:
             elif choice == "3":
                 self.add_quote_of_the_day()
             elif choice == "4":
-                self.process_file_records()  # Added option to process records from a file
+                self.process_file_records()
             elif choice == "5":
                 print("Exiting...")
                 break
@@ -143,7 +275,6 @@ class BaseFileProcessor(ABC):
         pass
 
     def read_file(self):
-        """Helper method for reading file content"""
         try:
             with open(self.file_path, "r") as file:
                 return file.read()
@@ -156,8 +287,6 @@ class BaseFileProcessor(ABC):
 
 # Specific class to process text (.txt) files
 class TextFileProcessor(BaseFileProcessor):
-    """Class responsible for processing .txt files."""
-
     def process_file(self):
         file_content = self.read_file()
         if file_content is None:
@@ -170,13 +299,16 @@ class TextFileProcessor(BaseFileProcessor):
             if record_type == "news":
                 text, city = details.split("; ")
                 News(text, city).save()
+                News(text, city).save_to_db()
             elif record_type == "privatead":
                 text, expiration_date_str = details.split("; ")
                 expiration_date = datetime.datetime.strptime(expiration_date_str, "%Y-%m-%d")
                 PrivateAd(text, expiration_date).save()
+                PrivateAd(text, expiration_date).save_to_db()
             elif record_type == "quoteoftheday":
                 quote, author = details.split("; ")
                 QuoteOfTheDay(quote, author).save()
+                QuoteOfTheDay(quote, author).save_to_db()
             else:
                 print(f"Unknown record type: {record_type}")
         os.remove(self.file_path)
@@ -197,23 +329,27 @@ class JsonFileProcessor(BaseFileProcessor):
 
                 if record_type == "news":
                     News(record["text"], record["city"]).save()
+                    News(record["text"], record["city"]).save_to_db()
                 elif record_type == "privatead":
                     expiration_date = datetime.datetime.strptime(record["expiration_date"], "%Y-%m-%d")
                     PrivateAd(record["text"], expiration_date).save()
+                    PrivateAd(record["text"], expiration_date).save_to_db()
                 elif record_type == "quoteoftheday":
                     QuoteOfTheDay(record["quote"], record["author"]).save()
+                    QuoteOfTheDay(record["quote"], record["author"]).save_to_db()
                 else:
                     print(f"Unknown record type: {record_type}")
+
             os.remove(self.file_path)
-            print(f"JSON file {self.file_path} processed and removed.")
+            print(f"File {self.file_path} processed and removed.")
         except json.JSONDecodeError:
-            print(f"Failed to decode JSON in {self.file_path}.")
+            print("Error decoding JSON. Please check the file format.")
+        except Exception as e:
+            print(f"An error occurred while processing the JSON file: {e}")
 
 
 # Specific class to process XML (.xml) files
 class XmlFileProcessor(BaseFileProcessor):
-    """Class responsible for processing .xml files."""
-
     def process_file(self):
         file_content = self.read_file()
         if file_content is None:
@@ -221,39 +357,42 @@ class XmlFileProcessor(BaseFileProcessor):
 
         try:
             root = ET.fromstring(file_content)
+            for record in root.findall('record'):
+                record_type = record.get('type').lower()
 
-            # Process news section
-            for news in root.findall("news"):
-                title = news.find("title").text
-                location = news.find("location").text
-                News(title, location).save()
-
-            # Process private ad section
-            for ad in root.findall("privateAd"):
-                title = ad.find("title").text
-                expiry_date_str = ad.find("expiryDate").text
-                expiry_date = datetime.datetime.strptime(expiry_date_str, "%Y-%m-%d")
-                PrivateAd(title, expiry_date).save()
-
-            # Process quote of the day section
-            for quote in root.findall("quoteOfTheDay"):
-                quote_text = quote.find("quote").text
-                author = quote.find("author").text
-                QuoteOfTheDay(quote_text, author).save()
+                if record_type == "news":
+                    text = record.find('text').text
+                    city = record.find('city').text
+                    News(text, city).save()
+                    News(text, city).save_to_db()
+                elif record_type == "privatead":
+                    text = record.find('text').text
+                    expiration_date_str = record.find('expiration_date').text
+                    expiration_date = datetime.datetime.strptime(expiration_date_str, "%Y-%m-%d")
+                    PrivateAd(text, expiration_date).save()
+                    PrivateAd(text, expiration_date).save_to_db()
+                elif record_type == "quoteoftheday":
+                    quote = record.find('quote').text
+                    author = record.find('author').text
+                    QuoteOfTheDay(quote, author).save()
+                    QuoteOfTheDay(quote, author).save_to_db()
+                else:
+                    print(f"Unknown record type: {record_type}")
 
             os.remove(self.file_path)
-            print(f"XML file {self.file_path} processed and removed.")
-
+            print(f"File {self.file_path} processed and removed.")
         except ET.ParseError:
-            print(f"Failed to parse XML in {self.file_path}.")
+            print("Error parsing XML. Please check the file format.")
+        except Exception as e:
+            print(f"An error occurred while processing the XML file: {e}")
 
 
-# FileProcessor class for delegating to specific processors
+# File processor that delegates to specific file types
 class FileProcessor:
     """Class responsible for processing files based on their format."""
 
     def __init__(self, file_path: str):
-        self.file_path = file_path or "news_feed_input.xml"
+        self.file_path = file_path or "news_feed_input.json"
 
     def process_file(self):
         _, file_extension = os.path.splitext(self.file_path)
@@ -265,13 +404,13 @@ class FileProcessor:
         elif file_extension.lower() == ".xml":
             processor = XmlFileProcessor(self.file_path)
         else:
-            print(f"Unsupported file extension: {file_extension}")
+            print(f"Unsupported file extension: {file_extension}. Only .txt, .json, and .xml are supported.")
             return
 
         processor.process_file()
 
 
-# Main code to start the application
+# Main execution point
 if __name__ == "__main__":
     manager = NewsFeedManager()
     manager.run()
