@@ -1,0 +1,296 @@
+News -------------------------
+Latest updates on the stock market
+London, 17/10/2024 17.04
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 43 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+News -------------------------
+Latest updates on the stock market
+London, 17/10/2024 17.05
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 43 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+Private Ad ------------------
+I want to sell a bike
+Actual until: 31/10/2024, 13 days left
+
+News -------------------------
+Latest updates on the stock market
+London, 18/10/2024 14.33
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 42 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+News -------------------------
+Latest updates on the stock market
+London, 18/10/2024 14.44
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 42 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+News -------------------------
+Latest updates on the stock market
+London, 18/10/2024 14.46
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 42 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+News -------------------------
+Latest updates on the stock market
+London, 18/10/2024 14.48
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 42 days left
+
+Private Ad ------------------
+I want to sale a bike
+Actual until: 30/11/2024, 42 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+Private Ad ------------------
+I want to sell a bike
+Actual until: 30/10/2024, 10 days left
+
+Private Ad ------------------
+34
+Actual until: 31/10/2024, 11 days left
+
+Private Ad ------------------
+I want to sell a bike
+Actual until: 11/11/2024, 22 days left
+
+Private Ad ------------------
+45
+Actual until: 11/11/2024, 22 days left
+
+Private Ad ------------------
+34
+Actual until: 11/11/2024, 22 days left
+
+News -------------------------
+Sd
+Sd, 19/10/2024 16.49
+
+News -------------------------
+23
+23, 19/10/2024 16.50
+
+News -------------------------
+34
+34, 19/10/2024 17.01
+
+Private Ad ------------------
+34
+Actual until: 31/12/2024, 72 days left
+
+Private Ad ------------------
+34
+Actual until: 01/11/2024, 12 days left
+
+News -------------------------
+34
+London, 19/10/2024 17.17
+
+News -------------------------
+34
+34, 19/10/2024 17.24
+
+News -------------------------
+1
+1, 19/10/2024 17.25
+
+News -------------------------
+1
+1, 19/10/2024 17.26
+
+News -------------------------
+23
+London, 19/10/2024 17.31
+
+News -------------------------
+1
+1, 19/10/2024 17.34
+
+News -------------------------
+1
+1, 19/10/2024 17.39
+
+News -------------------------
+1
+1, 19/10/2024 17.42
+
+News -------------------------
+2
+2, 19/10/2024 17.45
+
+News -------------------------
+2
+2, 19/10/2024 17.47
+
+News -------------------------
+2
+2, 19/10/2024 17.47
+
+News -------------------------
+3
+3, 19/10/2024 17.47
+
+News -------------------------
+3
+3, 19/10/2024 17.47
+
+News -------------------------
+3
+3, 19/10/2024 18.02
+
+News -------------------------
+3
+3, 19/10/2024 18.03
+
+News -------------------------
+4
+4, 19/10/2024 18.05
+
+News -------------------------
+4
+4, 19/10/2024 18.05
+
+News -------------------------
+3
+3, 19/10/2024 18.08
+
+News -------------------------
+3
+3, 19/10/2024 18.08
+
+News -------------------------
+3
+3, 19/10/2024 18.10
+
+News -------------------------
+1
+1, 19/10/2024 18.10
+
+Private Ad ------------------
+I want to sell a bike
+Actual until: 30/10/2024, 10 days left
+
+Private Ad ------------------
+Pyodbc.error: ('hy000', '[hy000] table private_ads has no column named text (1) (1) (sqlexecdirectw)')
+Actual until: 30/10/2024, 10 days left
+
+Private Ad ------------------
+Pyodbc.error: ('hy000', '[hy000] table private_ads has no column named text (1) (1) (sqlexecdirectw)')
+Actual until: 30/10/2024, 10 days left
+
+Private Ad ------------------
+If table == "private_ads":
+Actual until: 30/11/2024, 41 days left
+
+Private Ad ------------------
+3
+Actual until: 30/10/2024, 10 days left
+
+Private Ad ------------------
+3
+Actual until: 30/10/2024, 10 days left
+
+Quote of the day ------------
+"1"
+- 1
+
+Quote of the day ------------
+"1"
+- 1
+
+Quote of the day ------------
+"1"
+- 1
+
+News -------------------------
+Latest updates on the stock market
+London, 19/10/2024 18.28
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 41 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+News -------------------------
+Latest updates on the stock market
+London, 19/10/2024 18.32
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 41 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+Quote of the day ------------
+"4"
+- 4
+
+News -------------------------
+Latest updates on the stock market
+London, 19/10/2024 18.50
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 41 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+News -------------------------
+Latest updates on the stock market
+London, 19/10/2024 18.51
+
+Private Ad ------------------
+Sale on all summer items
+Actual until: 30/11/2024, 41 days left
+
+Quote of the day ------------
+"Life is what happens when you're busy making other plans"
+- John Lennon
+
+Quote of the day ------------
+"4"
+- 4
+
